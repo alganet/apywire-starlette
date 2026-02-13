@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 Alexandre Gomes Gaigalas <alganet@gmail.com>
+#
+# SPDX-License-Identifier: ISC
+
+apsw.Connection db:
+  filename: "db.sqlite"
+
+services.UserService users:
+  db: "{db}"
+
+services.MigrationService migrations:
+  db: "{db}"
+
+handlers.UserHandler user_handler:
+  users: "{users}"
+
+handlers.HomeHandler home_handler: {}
+
+starlette.routing.Route user_route:
+  path: "/users/{screen_name}"
+  endpoint: "{user_handler}"
+  methods: ["GET"]
+
+starlette.routing.Route hello_route:
+  path: "/"
+  endpoint: "{home_handler}"
+
+starlette.applications.Starlette app:
+  routes:
+    - "{user_route}"
+    - "{hello_route}"
