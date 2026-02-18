@@ -1,0 +1,74 @@
+name: CI
+description: Basic CI just to ensure that example keeps working after dependency updates
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build-and-smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.14'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --no-cache-dir -r requirements.txt
+
+      - name: Compile apywire container
+        run: python src/app.py --compile
+        
+      - name: Migrate database
+        run: python src/app.py --migrate
+
+      - name: Start application (uvicorn)
+        run: |
+          nohup python src/app.py --run > /tmp/uvicorn.log 2>&1 &
+          echo $! > /tmp/uvicorn.pid
+
+      - name: Wait for HTTP endpoint
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sS http://127.0.0.1:8000/ >/dev/null 2>&1; then
+              echo "service is up"; break
+            fi
+            echo "waiting for service... ($i/30)"; sleep 1
+          done
+          curl -sS http://127.0.0.1:8000/ || (tail -n +1 /tmp/uvicorn.log && exit 1)
+
+      - name: Verify JSON response
+        run: |
+          python - <<'PY'
+          import sys, json, urllib.request
+          expected = {"message": "Hello World!"}
+          try:
+              with urllib.request.urlopen("http://127.0.0.1:8000/") as r:
+                  actual = json.load(r)
+          except Exception as e:
+              print("Request failed:", e); sys.exit(2)
+          if actual != expected:
+              print("Response mismatch: expected=%r actual=%r" % (expected, actual))
+              sys.exit(1)
+          print("Response matches expected")
+          PY
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then kill "$(cat /tmp/uvicorn.pid)" || true; fi
+          sleep 1
+          tail -n +1 /tmp/uvicorn.log || true
