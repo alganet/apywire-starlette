@@ -18,7 +18,7 @@ if __name__ == "__main__":
         with open("config.yaml", "r") as f:
             config = yaml.safe_load(f)
         with open("src/container.py", "w") as f:
-            f.write(WiringCompiler(config).compile())
+            f.write(WiringCompiler(config).compile(aio=True))
     elif "--migrate" in sys.argv:
         compiled.migrations().run()
     elif "--run" in sys.argv:

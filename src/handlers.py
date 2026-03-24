@@ -8,13 +8,14 @@ import services
 
 
 class UserHandler:
-    def __init__(self, users: services.UserService):
-        self.users = users
+    def __init__(self, users):
+        self.users = users  # async accessor via {aio.users}
 
     async def __call__(self, scope, receive, send):
         request = Request(scope, receive)
         screen_name = request.path_params["screen_name"]
-        user = self.users.get_user(screen_name)
+        users = await self.users()
+        user = users.get_user(screen_name)
         if user:
             await JSONResponse({"user": user})(scope, receive, send)
         else:

@@ -12,7 +12,7 @@ services.MigrationService migrations:
   db: "{db}"
 
 handlers.UserHandler user_handler:
-  users: "{users}"
+  users: "{aio.users}"
 
 handlers.HomeHandler home_handler: {}
 
