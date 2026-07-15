@@ -4,6 +4,6 @@
 
 apywire==1.1.0
 starlette==1.3.1
-uvicorn==0.50.2
+uvicorn==0.51.0
 PyYAML==6.0.3
 apsw==3.53.3.1
