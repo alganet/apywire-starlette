@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: ISC
 
-apywire==1.1.0
+apywire==1.1.1
 starlette==1.6.0
 uvicorn==0.52.4
 PyYAML==6.0.3
